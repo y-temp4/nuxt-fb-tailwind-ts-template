@@ -1,18 +1,27 @@
 <template>
   <div class="wrapper">
     <form @submit.prevent="handleAddTodo">
-      <input v-model="todoItem" type="text" placeholder="Todoの内容" />
-      <button>追加</button>
+      <input
+        v-model="todoItem"
+        type="text"
+        placeholder="Todoの内容"
+        class="input"
+      />
+      <button class="button">追加</button>
     </form>
-    <ul>
+    <ul class="list">
       <li v-for="todo in todos" :key="todo.id">
-        {{ todo.body }}
+        <span :class="{ done: todo.done }">
+          {{ todo.body }}
+        </span>
         <input
           :checked="todo.done"
           type="checkbox"
           @change="handleChangeTodo($event, todo.id)"
         />
-        <button @click="handleDeleteTodo(todo.id)">削除</button>
+        <button class="button -alert" @click="handleDeleteTodo(todo.id)">
+          削除
+        </button>
       </li>
     </ul>
   </div>
@@ -73,8 +82,28 @@ export default Vue.extend({
 })
 </script>
 
-<style scoped>
+<style lang="postcss" scoped>
 .wrapper {
-  padding: 100px;
+  @apply bg-gray-200 p-10 m-10;
+}
+
+.input {
+  @apply border p-1;
+}
+
+.button {
+  @apply bg-blue-600 rounded-sm text-white px-2 font-bold text-sm;
+
+  &.-alert {
+    @apply bg-red-600;
+  }
+}
+
+.list {
+  @apply list-disc mt-4 ml-5;
+}
+
+.done {
+  @apply line-through;
 }
 </style>

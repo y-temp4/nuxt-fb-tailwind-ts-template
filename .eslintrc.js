@@ -14,4 +14,11 @@ module.exports = {
   plugins: ['prettier'],
   // add your custom rules here
   rules: {},
+  // 以下を追加
+  globals: {
+    page: true,
+    browser: true,
+    context: true,
+    jestPuppeteer: true,
+  },
 }

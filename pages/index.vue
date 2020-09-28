@@ -1,70 +1,80 @@
 <template>
-  <div class="container">
-    <div>
-      <Logo />
-      <h1 class="title">nuxt-fb-tailwind-ts-template</h1>
-      <div class="links">
-        <a
-          href="https://nuxtjs.org/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="button--green"
-        >
-          Documentation
-        </a>
-        <a
-          href="https://github.com/nuxt/nuxt.js"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="button--grey"
-        >
-          GitHub
-        </a>
-      </div>
-    </div>
+  <div class="wrapper">
+    <form @submit.prevent="handleAddTodo">
+      <input v-model="todoItem" type="text" placeholder="Todoの内容" />
+      <button>追加</button>
+    </form>
+    <ul>
+      <li v-for="todo in todos" :key="todo.id">
+        {{ todo.body }}
+        <input
+          :checked="todo.done"
+          type="checkbox"
+          @change="handleChangeTodo($event, todo.id)"
+        />
+        <button @click="handleDeleteTodo(todo.id)">削除</button>
+      </li>
+    </ul>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
+import { firebase } from '~/plugins/firebase'
 
-export default Vue.extend({})
+type Todo = {
+  id: string
+  body: string
+  done: boolean
+}
+
+export default Vue.extend({
+  data() {
+    return {
+      todoItem: '',
+      todos: [] as Todo[],
+      unsubscribeTodos: () => {},
+    }
+  },
+  async mounted() {
+    this.unsubscribeTodos = await firebase
+      .firestore()
+      .collection('todos')
+      .onSnapshot((snapshot) => {
+        this.todos = snapshot.docs.map((doc) => {
+          const id = doc.id
+          const data = doc.data()
+          return { id, ...data } as Todo
+        })
+      })
+  },
+  destroyed() {
+    this.unsubscribeTodos()
+  },
+  methods: {
+    async handleAddTodo() {
+      await firebase.firestore().collection('todos').add({
+        body: this.todoItem,
+        done: false,
+      })
+      this.todoItem = ''
+    },
+    async handleChangeTodo(event: Event, id: string) {
+      const done = (event.target as HTMLInputElement).checked
+      await firebase.firestore().collection('todos').doc(id).update({ done })
+    },
+    async handleDeleteTodo(id: string) {
+      const isOk = confirm('本当に削除してもよろしいですか？')
+      if (isOk) {
+        await firebase.firestore().collection('todos').doc(id).delete()
+      }
+    },
+  },
+})
 </script>
 
-<style>
-/* Sample `apply` at-rules with Tailwind CSS
-.container {
-@apply min-h-screen flex justify-center items-center text-center mx-auto;
-}
-*/
-.container {
-  margin: 0 auto;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-
-.title {
-  font-family: 'Quicksand', 'Source Sans Pro', -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  display: block;
-  font-weight: 300;
-  font-size: 100px;
-  color: #35495e;
-  letter-spacing: 1px;
-}
-
-.subtitle {
-  font-weight: 300;
-  font-size: 42px;
-  color: #526488;
-  word-spacing: 5px;
-  padding-bottom: 15px;
-}
-
-.links {
-  padding-top: 15px;
+<style scoped>
+.wrapper {
+  padding: 100px;
 }
 </style>
